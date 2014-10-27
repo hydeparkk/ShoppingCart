@@ -1,34 +1,71 @@
 __author__ = 'hydeparkk'
 
-from random import randint, random
+import json
 import unittest
 
 from pymongo import MongoClient
 
+from populate_db import populate_db
 import app
 
 
+TEST_DB = 'shopping-cart-test'
+
+
+class Slugifytest(unittest.TestCase):
+
+    def test_return_lowercase_text(self):
+        self.assertEqual(app.slugify('HYDECODE'), 'hydecode')
+
+    def test_replace_space_with_dash(self):
+        self.assertEqual(app.slugify('Hyde Code'), 'hyde-code')
+
+    def test_remove_unnecessary_spaces(self):
+        self.assertEqual(app.slugify('    Hyde    Code    '), 'hyde-code')
+
+    def test_return_only_ascii_letters_and_numbers(self):
+        self.assertEqual(app.slugify('qwerty12345!@#$%^&*()"><?:}{|-'),
+                         'qwerty12345-')
+
+
 class AppTests(unittest.TestCase):
+
     def setUp(self):
+        self.maxDiff = None
         self.client = MongoClient()
-        self.db = self.client['shopping-cart-test']
+        self.db = self.client[TEST_DB]
+        app.db = self.db
         # Populate database with random data
-        for i in xrange(randint(1, 10)):
-            cat_id = self.db.categories.insert({'name': 'Cat%d' % i})
-            for j in xrange(randint(1, 25)):
-                price = random() * randint(1, 100)
-                self.db.products.insert(
-                    {'name': 'Prod%d' % j,
-                     'price': round(price, 2),
-                     'promo_price': round(price * 0.25, 2),
-                     'category': cat_id})
+        populate_db(TEST_DB)
 
     def tearDown(self):
-        pass  # self.client.drop_database('shopping-cart-test')
+        self.client.drop_database('shopping-cart-test')
 
     def test_get_categories(self):
-        categories = app.get_categories()
+        categories = json.loads(app.get_categories())
         self.assertEqual(len(categories), self.db.categories.count())
+        self.assertEqual(sum([item['prod_amount'] for item in categories]),
+                         self.db.products.count())
+
+    def test_get_category_products(self):
+        products = list(
+            self.db.products.find(
+                sort=[('name', 1)],
+                limit=app.PRODUCTS_PER_PAGE))
+        for prod in products:
+            prod['_id'] = str(prod['_id'])
+            del prod['cat_id']
+
+        self.assertEqual(
+            json.loads(
+                app.get_products_by_category('cat-0')),
+            products)
+
+    def test_get_product_details(self):
+        prod_0_0 = self.db.products.find_one({'name_slug': 'prod-0-0'})
+        prod_0_0['_id'] = str(prod_0_0['_id'])
+        del prod_0_0['cat_id']
+        self.assertEqual(json.loads(app.get_product('prod-0-0')), prod_0_0)
 
 
 if __name__ == '__main__':
