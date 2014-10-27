@@ -13,3 +13,17 @@ Shopping cart module
 * Application must work (just let us know how to run it)
 * Define rest api for entire module and stub functionality
 * Implement at least one functionality specified above from end-to-end in TDD (assuming that MongoDB runs on default port - 27017)
+
+___
+
+How to run it?
+--------------
+
+Create a virtualenv, activate it and install all necessary modules: 
+
+    > virtualenv shoppingcart
+    > shoppingcart/scripts/activate.bat
+    > cd <project_root_directory>
+    > pip install -r requirements.txt
+
+

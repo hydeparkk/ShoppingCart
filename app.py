@@ -3,7 +3,7 @@ __author__ = 'hydeparkk'
 from os import path
 import json
 
-from bottle import Bottle, static_file, run, mako_template
+from bottle import Bottle, static_file, response, run, mako_template
 from pymongo import MongoClient
 
 
@@ -51,6 +51,7 @@ def get_categories():
              'name_slug': cat['name_slug'],
              'prod_amount': db.products.find({'cat_id': cat['_id']}).count()})
 
+    response.content_type = 'application/json'
     return json.dumps(ret_val)
 
 
@@ -69,6 +70,7 @@ def get_products_by_category(cat_name, page=0):
         prod['_id'] = str(prod['_id'])
         del prod['cat_id']
 
+    response.content_type = 'application/json'
     return json.dumps(products)
 
 
@@ -78,7 +80,15 @@ def get_product(prod_name):
     prod['_id'] = str(prod['_id'])
     del prod['cat_id']
 
+    response.content_type = 'application/json'
     return json.dumps(prod)
+
+@shopping_cart_app.route('/api/basket/add', method='POST')
+def add_product_to_basket():
+    if '' == 'new':
+        pass
+    else:
+        pass
 
 
 # ---------------------------------------
