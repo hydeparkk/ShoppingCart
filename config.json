@@ -1,0 +1,6 @@
+{
+    "MONGODB_USER": "",
+    "MONGODB_PASSWD": "",
+    "MONGODB_HOST": "localhost",
+    "MONGODB_NAME": "thedb"
+}
