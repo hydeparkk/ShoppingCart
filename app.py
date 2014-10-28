@@ -204,26 +204,29 @@ def add_promo_code():
     data = request.json
     if 'basket_id' in data:
         basket = db.basket.find_one({'_id': ObjectId(data['basket_id'])})
-        promo_code = db.promo_codes.find_one({'code': data['promo_code']})
-
-        db.basket.update(
-            {'_id': basket['_id']},
-            {
-                '$push':
-                {
-                    'promo_codes':
+        if data['promo_code'] not in [item['promo_code']
+                                      for item in basket['promo_codes']]:
+            promo_code = db.promo_codes.find_one({'code': data['promo_code']})
+            if promo_code is not None:
+                db.basket.update(
+                    {'_id': basket['_id']},
                     {
-                        'promo_code': promo_code['code'],
-                        'bonus': promo_code['bonus']
+                        '$push':
+                        {
+                            'promo_codes':
+                            {
+                                'promo_code': promo_code['code'],
+                                'bonus': promo_code['bonus']
+                            }
+                        }
                     }
-                }
-            }
-        )
-        basket = db.basket.find_one({'_id': ObjectId(data['basket_id'])})
-        basket['_id'] = str(basket['_id'])
-        return json.dumps(basket)
-    else:
-        return json.dumps([])
+                )
+                basket = db.basket.find_one(
+                    {'_id': ObjectId(data['basket_id'])})
+                basket['_id'] = str(basket['_id'])
+                return json.dumps(basket)
+
+    return json.dumps([])
 
 
 # ---------------------------------------
@@ -242,7 +245,8 @@ def index():
 def category_products(cat_name, page=1):
     prods = json.loads(get_products_by_category(cat_name, page))
     cat = db.categories.find_one({'name_slug': cat_name})
-    pages = db.products.find({'cat_id': cat['_id']}).count() / PRODUCTS_PER_PAGE + 2
+    pages = db.products.find(
+        {'cat_id': cat['_id']}).count() / PRODUCTS_PER_PAGE + 2
     response.content_type = 'text/html'
     return mako_template('templates\\products.mako',
                          prods=prods,
@@ -264,10 +268,23 @@ def get_basket():
     basket = db.basket.find_one(
         {'_id': ObjectId(request.session.get('basket_id', None))})
     if basket is not None:
+        total = 0
         for prod in basket['products']:
             prd = db.products.find_one({'_id': ObjectId(prod['prod_id'])})
             prod['name'] = prd['name']
             prod['slug'] = prd['name_slug']
+            total += prod['amount'] * prod['price']
+
+        tmp = 0
+        for code in basket['promo_codes']:
+            if '%' in code['bonus']:
+                tmp = total * \
+                    (1 - (int(code['bonus'].replace('%', '')) / 100.0))
+                total *= 1 - (int(code['bonus'].replace('%', '')) / 100.0)
+            else:
+                total -= int(code['bonus'])
+
+        basket['total'] = total if total > 0 else 0
     return mako_template('templates\\basket.mako',
                          basket=basket)
 

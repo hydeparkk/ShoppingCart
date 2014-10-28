@@ -25,8 +25,28 @@
                             <td><button class="btn btn-sm remove-from-basket" data-prod-id="${prod['prod_id']}" data-basket-id="${basket['_id']}"><span class="glyphicon glyphicon-remove text-danger"></span></button></td>
                         </tr>
                         % endfor
+                        <tr>
+                            <td colspan="3"></td>
+                            <td>${basket['total']}</td>
+                        </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-info">
+                    <div class="panel-heading">Used promo codes</div>
+                    <div class="panel-body">
+                    % if basket['promo_codes']:
+                    % for code in basket['promo_codes']:
+                        <p>${code['promo_code']} <span class="label label-success pull-right">-${code['bonus']}</span></p>
+                    % endfor
+                    % endif
+                        <div class="form-inline">
+                            <input id="promo-code" class="form-control" type="text" placeholder="Enter promo code"/>
+                            <button id="add-promo-code" class="btn btn-primary" data-basket-id="${basket['_id']}">Add</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         % else:
             <h2>Your basket is empty.</h2>

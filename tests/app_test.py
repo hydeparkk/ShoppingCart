@@ -161,5 +161,17 @@ class AppTests(unittest.TestCase):
 
         self.assertEqual(len(req_data['promo_codes']), 1)
 
+    def test_add__not_existing_promo_code_to_basket(self):
+        req = self.app.post_json(
+            '/api/basket/promocode',
+            {
+                'basket_id': self.basket['_id'],
+                'promo_code': 'qwerty'
+            }
+        )
+        req_data = json.loads(req.body)
+
+        self.assertEqual(req_data, [])
+
 if __name__ == '__main__':
     unittest.main()

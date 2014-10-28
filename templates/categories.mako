@@ -5,7 +5,7 @@
     % for cat in cats:
         <div class="col-md-4">
             <div class="media">
-                <a class="pull-left" href="">
+                <a class="pull-left" href="/category/${cat['name_slug']}">
                     <img class="media-object" src="http://placehold.it/100x100">
                 </a>
                 <div class="media-body">

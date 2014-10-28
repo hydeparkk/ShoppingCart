@@ -26,4 +26,14 @@ Create a virtualenv, activate it and install all necessary modules:
     > cd <project_root_directory>
     > pip install -r requirements.txt
 
-Populate database with data using `populate_db.py` script. 
+Populate database with data using `populate_db.py` script.
+To start application run from console:
+
+    > python app.py
+    
+To start test run:
+
+    > python tests/app_test.py
+    
+In could be necessary to add project root path to *PYTHONPATH* variable in case of any errors.
+
