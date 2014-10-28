@@ -2,5 +2,6 @@
     "MONGODB_USER": "",
     "MONGODB_PASSWD": "",
     "MONGODB_HOST": "localhost",
-    "MONGODB_NAME": "thedb"
+    "MONGODB_PORT": 27017,
+    "MONGODB_NAME": "shopping-cart"
 }

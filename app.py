@@ -3,12 +3,13 @@ __author__ = 'hydeparkk'
 from os import path
 import json
 
-from bottle import Bottle, static_file, response, run, mako_template
+from bottle import Bottle, static_file, response, run, mako_template, request
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 
 SITE_ROOT = path.dirname(__file__)
-PRODUCTS_PER_PAGE = 12
+PRODUCTS_PER_PAGE = 30
 
 db = MongoClient()['shopping-cart']
 db.categories.ensure_index([('name', 1), ('unique', True), ('dropDups', True)])
@@ -58,7 +59,11 @@ def get_categories():
 @shopping_cart_app.route('/api/category/<cat_name>')
 @shopping_cart_app.route('/api/category/<cat_name>/<page:int>')
 def get_products_by_category(cat_name, page=0):
-    cat_id = db.categories.find_one({'name_slug': cat_name})['_id']
+    response.content_type = 'application/json'
+    try:
+        cat_id = db.categories.find_one({'name_slug': cat_name})['_id']
+    except TypeError:
+        return json.dumps([])
     products = list(
         db.products.find(
             {'cat_id': cat_id},
@@ -70,25 +75,94 @@ def get_products_by_category(cat_name, page=0):
         prod['_id'] = str(prod['_id'])
         del prod['cat_id']
 
-    response.content_type = 'application/json'
     return json.dumps(products)
 
 
 @shopping_cart_app.route('/api/product/<prod_name>')
 def get_product(prod_name):
-    prod = db.products.find_one({'name_slug': prod_name})
-    prod['_id'] = str(prod['_id'])
-    del prod['cat_id']
-
     response.content_type = 'application/json'
-    return json.dumps(prod)
+    prod = db.products.find_one({'name_slug': prod_name})
+    if prod is not None:
+        prod['_id'] = str(prod['_id'])
+        del prod['cat_id']
+
+        return json.dumps(prod)
+    else:
+        return json.dumps([])
+
 
 @shopping_cart_app.route('/api/basket/add', method='POST')
 def add_product_to_basket():
-    if '' == 'new':
-        pass
+    data = request.json
+    prod = db.products.find_one({'_id': ObjectId(data['prod_id'])})
+    price = prod['price'] if data['amount'] < 3 else prod['promo_price']
+
+    if 'basket_id' in data:
+        basket = db.basket.find_one({'_id': ObjectId(data['basket_id'])})
+        if data['prod_id'] in [item['prod_id']for item in basket['products']]:
+            for item in basket['products']:
+                if item['prod_id'] == data['prod_id']:
+                    item['amount'] += data['amount']
+                    if item['amount'] > 2:
+                        item['price'] = prod['promo_price']
+
+            total = sum([item['amount'] * item['price']
+                         for item in basket['products']])
+
+            db.basket.update(
+                {
+                    '_id': ObjectId(data['basket_id']),
+                    'products.prod_id': data['prod_id']
+                },
+                {
+                    '$set': {'total': round(total, 2)},
+                    '$push': {
+                        'products.$': {
+                            'price': price,
+                            'amount': data['amount']
+                        }
+                    }
+                }
+            )
+        else:
+            total = basket['total'] + price * data['amount']
+            ret = db.basket.update(
+                {'_id': ObjectId(data['basket_id'])},
+                {
+                    '$set': {'total': round(total, 2)},
+                    '$push': {
+                        'products': {
+                            'prod_id': data['prod_id'],
+                            'price': price,
+                            'amount': data['amount']
+                        }
+                    }
+                }
+            )
+            print(ret)
     else:
-        pass
+        basket = db.basket.insert(
+            {
+                'products': [
+                    {
+                        'prod_id': data['prod_id'],
+                        'price': price,
+                        'amount': data['amount']
+                    }
+                ],
+                'promo_codes': [],
+                'total': round(price * data['amount'], 2),
+            }
+        )
+
+    if isinstance(basket, ObjectId):
+        basket = db.basket.find_one({'_id': basket})
+    else:
+        basket = db.basket.find_one({'_id': ObjectId(data['basket_id'])})
+
+    basket['_id'] = str(basket['_id'])
+    response.content_type = 'application/json'
+    return json.dumps(basket)
 
 
 # ---------------------------------------

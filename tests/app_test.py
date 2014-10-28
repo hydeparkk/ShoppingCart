@@ -14,7 +14,6 @@ TEST_DB = 'shopping-cart-test'
 
 
 class SlugifyTests(unittest.TestCase):
-
     def test_return_lowercase_text(self):
         self.assertEqual(app.slugify('HYDECODE'), 'hydecode')
 
@@ -30,7 +29,6 @@ class SlugifyTests(unittest.TestCase):
 
 
 class AppTests(unittest.TestCase):
-
     def setUp(self):
         self.maxDiff = None
         self.client = MongoClient()
@@ -46,7 +44,7 @@ class AppTests(unittest.TestCase):
     def test_get_categories_request(self):
         req = self.app.get('/api/category')
         self.assertEqual(req.status, '200 OK')
-        self.assertEqual(len(json.loads(req.body)), self.db.categories.count())
+        self.assertEqual(req.content_type, 'application/json')
 
     def test_get_categories(self):
         categories = json.loads(app.get_categories())
@@ -54,9 +52,16 @@ class AppTests(unittest.TestCase):
         self.assertEqual(sum([item['prod_amount'] for item in categories]),
                          self.db.products.count())
 
+    def test_get_category_products_request(self):
+        req = self.app.get('/api/category/cat-0')
+        self.assertEqual(req.status, '200 OK')
+        self.assertEqual(req.content_type, 'application/json')
+
     def test_get_category_products(self):
+        cat = self.db.categories.find_one({'name_slug': 'cat-0'})
         products = list(
             self.db.products.find(
+                {'cat_id': cat['_id']},
                 sort=[('name', 1)],
                 limit=app.PRODUCTS_PER_PAGE))
         for prod in products:
@@ -68,6 +73,15 @@ class AppTests(unittest.TestCase):
                 app.get_products_by_category('cat-0')),
             products)
 
+    def get_product_details_request(self):
+        req = self.app.get('/api/product/prod-0-0')
+        self.assertEqual(req.status, '200 OK')
+        self.assertEqual(req.content_type, 'application/json')
+
+    def test_get_not_existing_product_details_request(self):
+        req = self.app.get('/api/product/somekindofproduct')
+        self.assertEqual(json.loads(req.body), [])
+
     def test_get_product_details(self):
         prod_0_0 = self.db.products.find_one({'name_slug': 'prod-0-0'})
         prod_0_0['_id'] = str(prod_0_0['_id'])
@@ -76,9 +90,24 @@ class AppTests(unittest.TestCase):
 
     def test_add_product_to_basket(self):
         prod = self.db.products.find_one({'name_slug': 'prod-0-0'})
-        basket = app.add_product_to_basket('prod-0-0', 2)
+        req = self.app.post_json(
+            '/api/basket/add',
+            {'prod_id': str(prod['_id']), 'amount': 2})
 
-        self.assertEqual(basket['products'], 2)
+        req_data = json.loads(req.body)
+
+        self.assertEqual(req.status, '200 OK')
+        self.assertIn('_id', req_data)
+        self.assertEqual(req_data['total'], 2 * prod['price'])
+
+        prod = self.db.products.find_one({'name_slug': 'prod-1-0'})
+        req = self.app.post_json(
+            '/api/basket/add',
+            {'basket_id': req_data['_id'], 'prod_id': str(prod['_id']), 'amount': 4})
+        req_data = json.loads(req.body)
+
+        self.assertEqual(req.status, '200 OK')
+        self.assertEqual(len(req_data['products']), 2)
 
 
 if __name__ == '__main__':
