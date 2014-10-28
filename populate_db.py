@@ -23,9 +23,17 @@ def populate_db(database, host='localhost', port=27017):
             db.products.insert(
                 {'name': 'Prod_%d_%d' % (i, j),
                  'name_slug': slugify('Prod_%d_%d' % (i, j)),
-                 'price': round(price, 2),
-                 'promo_price': round(price * 0.75, 2),
+                 'price': float('{0:.2f}'.format(price)),
+                 'promo_price': float('{0:.2f}'.format(price * 0.75)),
                  'cat_id': cat_id})
+
+    promo_codes = [
+        {'code': 'hydecode', 'bonus': '20%'},
+        {'code': 'testcode', 'bonus': '100'},
+        {'code': 'free', 'bonus': '100%'}
+    ]
+
+    db.promo_codes.insert(promo_codes)
 
 if __name__ == '__main__':
     populate_db('shopping-cart')

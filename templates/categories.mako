@@ -2,7 +2,7 @@
 <%block name="title">Categories</%block>
 
 <%block name="content">
-    %for cat in cats:
+    % for cat in cats:
         <div class="col-md-4">
             <div class="media">
                 <a class="pull-left" href="">
@@ -18,5 +18,5 @@
                 </div>
             </div>
         </div>
-    %endfor
+    % endfor
 </%block>

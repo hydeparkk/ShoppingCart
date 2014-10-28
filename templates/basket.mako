@@ -1,0 +1,35 @@
+<%inherit file="templates/base.mako" />
+<%block name="title">Basket</%block>
+
+<%block name="content">
+    <div class="row">
+        % if basket is not None and len(basket['products']) > 0:
+            <div class="col-md-8">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Amount</th>
+                            <th>Price</th>
+                            <th>Sum</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        % for prod in basket['products']:
+                        <tr>
+                            <td><a class="btn btn-link" href="/product/${prod['slug']}">${prod['name']}</a></td>
+                            <td>${prod['amount']}</td>
+                            <td>${prod['price']}</td>
+                            <td>${prod['price'] * prod['amount']}</td>
+                            <td><button class="btn btn-sm remove-from-basket" data-prod-id="${prod['prod_id']}" data-basket-id="${basket['_id']}"><span class="glyphicon glyphicon-remove text-danger"></span></button></td>
+                        </tr>
+                        % endfor
+                    </tbody>
+                </table>
+            </div>
+        % else:
+            <h2>Your basket is empty.</h2>
+        % endif
+    </div>
+</%block>

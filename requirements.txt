@@ -2,3 +2,4 @@ bottle
 pymongo
 mako
 webtest
+beaker

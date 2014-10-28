@@ -10,13 +10,15 @@
 <body>
     <div class="container body-content">
         <div class="page-header">
-            <a href="/">
-                <h1>Simple shopping cart <small>Have fun, be careful.</small></h1>
-            </a>
+            <h1>
+                <a href="/">Simple shopping cart <small>Have fun, be careful.</small></a>
+                <a class="btn btn-primary pull-right" href="/basket">Basket <span class="glyphicon glyphicon-shopping-cart"></span></a>
+            </h1>
         </div>
     <%block name="content"></%block>
     </div>
     <script src="/static/scripts/jquery-1.10.2.min.js"></script>
     <script src="/static/scripts/bootstrap.min.js"></script>
+    <script src="/static/scripts/app.js"></script>
 </body>
 </html>
