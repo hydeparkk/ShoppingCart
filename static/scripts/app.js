@@ -6,7 +6,6 @@ $(document).ready(function () {
         if ($(this).attr('data-basket-id') != 'None') {
             data.basket_id = $(this).attr('data-basket-id');
         }
-        console.log(data);
         $.ajax({
             type: 'POST',
             contentType: 'application/json',
@@ -22,12 +21,27 @@ $(document).ready(function () {
         var data = {};
         data.prod_id = $(this).attr('data-prod-id');
         data.basket_id = $(this).attr('data-basket-id');
-        console.log(data);
         $.ajax({
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify(data),
             url: '/api/basket/remove',
+            success: function () {
+                location.reload();
+            }
+        });
+    });
+
+    $('#add-promo-code').click(function () {
+        var data = {};
+        data.promo_code = $('#promo-code').val();
+        data.basket_id = $(this).attr('data-basket-id');
+        console.log(data);
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            url: '/api/basket/promocode',
             success: function () {
                 location.reload();
             }
